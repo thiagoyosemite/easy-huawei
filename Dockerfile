@@ -28,4 +28,4 @@ RUN chmod +x start.sh
 
 EXPOSE 3000 5173 20 21 21100-21110
 
-CMD ["./start.sh"] 
+CMD ["/bin/sh", "./start.sh"] 
