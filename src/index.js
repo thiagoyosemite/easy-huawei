@@ -223,12 +223,23 @@ app.get('/api/download/:filename', (req, res) => {
 });
 
 // Servir arquivos estáticos do frontend
-app.use(express.static(path.join(__dirname, '../dist')));
-
-// Rota para todas as outras requisições - serve o index.html
-app.get('*', (req, res) => {
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, '../dist')));
+  
+  // Rota para todas as outras requisições - serve o index.html
+  app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/index.html'));
-});
+  });
+} else {
+  // Em desenvolvimento, não tentamos servir arquivos estáticos
+  // O Vite já está servindo o frontend em outra porta
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next();
+    }
+    res.json({ message: 'Em desenvolvimento, acesse o frontend via Vite: http://localhost:5173' });
+  });
+}
 
 // Tratamento de erros
 process.on('SIGINT', () => {
