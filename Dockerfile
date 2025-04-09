@@ -21,8 +21,9 @@ WORKDIR /app
 # Copiar apenas os arquivos de dependência primeiro
 COPY package*.json ./
 
-# Instalar dependências
-RUN npm ci --only=production
+# Limpar cache do npm e instalar dependências
+RUN npm cache clean --force \
+    && npm ci
 
 # Copiar o resto dos arquivos
 COPY . .
@@ -36,7 +37,9 @@ RUN npm run build \
 EXPOSE 3000
 
 # Configurar usuário não-root
-RUN useradd -r -u 1001 -g root nodeuser
+RUN useradd -r -u 1001 -g root nodeuser \
+    && chown -R nodeuser:root /app
+
 USER nodeuser
 
 # Comando para iniciar
