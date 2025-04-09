@@ -4,6 +4,7 @@ const path = require('path');
 const OltManager = require('./OltManager');
 const multer = require('multer');
 const fs = require('fs');
+const settings = require('./settings');
 
 const app = express();
 app.use(express.json());
@@ -164,6 +165,27 @@ app.get('/api/download/:filename', (req, res) => {
     }
     
     res.download(filePath);
+});
+
+// Rotas de configurações
+app.get('/api/settings', async (req, res) => {
+    try {
+        const currentSettings = await settings.getSettings();
+        res.json(currentSettings);
+    } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+        res.status(500).json({ error: 'Erro ao carregar configurações' });
+    }
+});
+
+app.post('/api/settings', async (req, res) => {
+    try {
+        const updatedSettings = await settings.updateSettings(req.body);
+        res.json(updatedSettings);
+    } catch (error) {
+        console.error('Erro ao salvar configurações:', error);
+        res.status(500).json({ error: 'Erro ao salvar configurações' });
+    }
 });
 
 // Servir arquivos estáticos do frontend

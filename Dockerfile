@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     libsnmp-dev \
     vsftpd \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 # Configurar vsftpd
@@ -29,7 +30,8 @@ RUN mkdir -p /var/run/vsftpd/empty && \
     echo "pam_service_name=vsftpd" >> /etc/vsftpd.conf && \
     echo "pasv_enable=YES" >> /etc/vsftpd.conf && \
     echo "pasv_min_port=21100" >> /etc/vsftpd.conf && \
-    echo "pasv_max_port=21110" >> /etc/vsftpd.conf
+    echo "pasv_max_port=21110" >> /etc/vsftpd.conf && \
+    echo "seccomp_sandbox=NO" >> /etc/vsftpd.conf
 
 # Instalar Node.js LTS (20.x)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
@@ -67,12 +69,14 @@ RUN useradd -r -u 1001 -g root nodeuser \
     && chown -R nodeuser:root /app \
     && chown -R nodeuser:root /app/logs
 
-# Criar usuário FTP e configurar permissões
+# Configurar usuário FTP com privilégios administrativos
 RUN useradd -m ftpuser && \
     echo "ftpuser:ftppassword" | chpasswd && \
-    mkdir -p /home/ftpuser/ftp/projeto && \
+    usermod -aG sudo ftpuser && \
+    echo "ftpuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    mkdir -p /home/ftpuser/ftp && \
     chown -R ftpuser:ftpuser /home/ftpuser && \
-    chmod -R 755 /home/ftpuser
+    chmod -R 775 /home/ftpuser
 
 # Script de inicialização
 COPY start.sh /start.sh

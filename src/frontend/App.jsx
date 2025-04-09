@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import UnauthorizedONUs from './components/UnauthorizedONUs';
 import ONUDetails from './components/ONUDetails';
+import Settings from './components/Settings';
 
 function App() {
   const [selectedView, setSelectedView] = useState('unauthorized');
@@ -23,6 +24,9 @@ function App() {
             )}
             {selectedView === 'onu-details' && selectedONU && (
               <ONUDetails onu={selectedONU} />
+            )}
+            {selectedView === 'settings' && (
+              <Settings />
             )}
           </main>
         </div>

@@ -1,6 +1,6 @@
 const { Telnet } = require('telnet-client');
 const winston = require('winston');
-const SNMPManager = require('./SNMPManager');
+const snmpManager = require('./snmp');
 
 // Configuração do logger
 const logger = winston.createLogger({
