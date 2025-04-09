@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Iniciar o servidor FTP em background
+# Iniciar o servidor FTP
 /usr/sbin/vsftpd /etc/vsftpd.conf &
 
-# Mudar para o usuário nodeuser e iniciar a aplicação Node.js
-su nodeuser -c "cd /app && npm start" 
+# Iniciar a aplicação Node.js
+npm start 
