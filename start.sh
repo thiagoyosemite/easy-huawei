@@ -19,5 +19,8 @@ sleep 2
 # Mostrar logs do FTP
 tail -f /var/log/vsftpd.log &
 
-# Iniciar aplicação Node.js
-cd /app && npm run dev 
+# Instalar dependências se necessário
+npm install
+
+# Iniciar aplicação em modo desenvolvimento
+npm run dev 
