@@ -1,26 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 
-# Garantir permissões no início
-sudo chown -R ftpuser:ftpuser /app
-sudo chmod -R 777 /app
-sudo chmod -R 777 /home/ftpuser
+# Iniciar o vsftpd em background
+vsftpd /etc/vsftpd/vsftpd.conf &
 
-# Criar e configurar arquivo de log
-sudo touch /var/log/vsftpd.log
-sudo chown ftpuser:ftpuser /var/log/vsftpd.log
-sudo chmod 777 /var/log/vsftpd.log
+# Criar diretório de uploads se não existir
+mkdir -p /app/uploads
+chown -R ftpuser:ftpuser /app/uploads
 
-# Iniciar o servidor FTP
-sudo /usr/sbin/vsftpd /etc/vsftpd.conf &
-
-# Aguardar FTP iniciar
-sleep 2
-
-# Mostrar logs do FTP
-tail -f /var/log/vsftpd.log &
-
-# Instalar dependências se necessário
-npm install
-
-# Iniciar aplicação em modo desenvolvimento
-npm run dev 
+# Iniciar o servidor backend
+cd /app && npm run dev 

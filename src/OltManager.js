@@ -1,6 +1,7 @@
 const { Telnet } = require('telnet-client');
 const winston = require('winston');
-const snmpManager = require('./snmp');
+const SNMPManager = require('./SNMPManager');
+require('dotenv').config();
 
 // Configuração do logger
 const logger = winston.createLogger({
@@ -22,216 +23,247 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 class OltManager {
-    constructor(config) {
-        this.config = config;
+    constructor() {
         this.connection = new Telnet();
-        this.connected = false;
-
-        // Configurações do Telnet
-        this.params = {
-            host: this.config.host,
-            port: this.config.port,
-            negotiationMandatory: false,
-            timeout: 1500,
-            username: this.config.username,
-            password: this.config.password,
-            shellPrompt: /[\$#>]\s*$/,
-            loginPrompt: 'Username:',
-            passwordPrompt: 'Password:',
-            debug: process.env.NODE_ENV !== 'production'
-        };
-
-        // Inicializar SNMP
-        this.snmp = new SNMPManager({
-            host: config.host,
-            community: process.env.SNMP_COMMUNITY || 'public',
-            version: parseInt(process.env.SNMP_VERSION || '2'),
-            port: parseInt(process.env.SNMP_PORT || '161')
-        });
+        this.snmp = new SNMPManager();
+        this.host = process.env.OLT_HOST;
+        this.username = process.env.OLT_USERNAME;
+        this.password = process.env.OLT_PASSWORD;
     }
 
     async connect() {
+        const params = {
+            host: this.host,
+            port: 23,
+            negotiationMandatory: false,
+            timeout: 1500,
+        };
+
         try {
-            await this.connection.connect(this.params);
-            this.connected = true;
-            logger.info('Conexão Telnet estabelecida com sucesso');
+            await this.connection.connect(params);
+            await this.connection.write(this.username + '\n');
+            await this.connection.write(this.password + '\n');
+            return true;
+        } catch (error) {
+            logger.error('Erro na conexão:', error);
+            return false;
+        }
+    }
+
+    async getOLTInfo() {
+        try {
+            await this.connect();
             
-            // Configurações iniciais
-            await this.executeCommand('screen-length 0 temporary');
-            await this.executeCommand('config');
-        } catch (error) {
-            logger.error('Erro na conexão Telnet:', error);
-            this.connected = false;
-            throw error;
-        }
-    }
-
-    async executeCommand(command) {
-        if (!this.connected) {
-            throw new Error('Não conectado à OLT');
-        }
-
-        try {
-            const response = await this.connection.send(command);
-            logger.info(`Comando executado: ${command}`);
-            return response;
-        } catch (error) {
-            logger.error('Erro ao executar comando:', error);
-            throw error;
-        }
-    }
-
-    async disconnect() {
-        if (this.connected) {
-            try {
-                await this.connection.end();
-                this.connected = false;
-                logger.info('Desconectado da OLT');
-            } catch (error) {
-                logger.error('Erro ao desconectar:', error);
-            }
-        }
-        this.snmp.close();
-    }
-
-    // Métodos para gerenciamento de ONUs
-    async getUnauthorizedONUs() {
-        try {
-            const result = await this.executeCommand('display ont autofind all');
-            return this.parseUnauthorizedONUs(result);
-        } catch (error) {
-            logger.error('Erro ao buscar ONUs não autorizadas:', error);
-            throw error;
-        }
-    }
-
-    async provisionONU({frame, slot, port, onuId, sn, description, lineProfile, serviceProfile, vlan}) {
-        try {
-            const commands = [
-                `interface gpon ${frame}/${slot}`,
-                `ont add ${port} ${onuId} sn-auth ${sn} omci ont-lineprofile-id ${lineProfile} ont-srvprofile-id ${serviceProfile} desc "${description}"`,
-                `ont port native-vlan ${port} ${onuId} eth 1 vlan ${vlan}`,
-                'quit'
-            ];
-
-            for (const command of commands) {
-                await this.executeCommand(command);
-            }
-
-            logger.info(`ONU ${sn} provisionada com sucesso`);
-            return true;
-        } catch (error) {
-            logger.error(`Erro ao provisionar ONU ${sn}:`, error);
-            throw error;
-        }
-    }
-
-    async deleteONU(frame, slot, port, onuId) {
-        try {
-            const commands = [
-                `interface gpon ${frame}/${slot}`,
-                `ont delete ${port} ${onuId}`,
-                'quit'
-            ];
-
-            for (const command of commands) {
-                await this.executeCommand(command);
-            }
-
-            logger.info(`ONU ${onuId} removida com sucesso`);
-            return true;
-        } catch (error) {
-            logger.error(`Erro ao remover ONU ${onuId}:`, error);
-            throw error;
-        }
-    }
-
-    async getONUDetails(frame, slot, port, onuId) {
-        try {
-            const commands = [
-                `interface gpon ${frame}/${slot}`,
-                `display ont info ${port} ${onuId}`,
-                'quit'
-            ];
-
-            let details = '';
-            for (const command of commands) {
-                details += await this.executeCommand(command);
-            }
-
-            return details;
-        } catch (error) {
-            logger.error(`Erro ao obter detalhes da ONU ${onuId}:`, error);
-            throw error;
-        }
-    }
-
-    async getONUSignal(frame, slot, port, onuId) {
-        try {
-            // Tentar primeiro via SNMP
-            const signal = await this.snmp.getONUSignalStrength(port, onuId);
-            return { rxPower: signal };
-        } catch (error) {
-            // Se falhar SNMP, usar Telnet como fallback
-            const command = `display ont optical-info ${frame} ${slot} ${port} ${onuId}`;
-            const output = await this.executeCommand(command);
-            // Processar saída do comando
-            const rxMatch = output.match(/RX power\s*:\s*([-\d.]+)\s*dBm/);
+            // Coletar informações do sistema
+            await this.connection.write('display version\n');
+            const versionInfo = await this.connection.exec('display version\n');
+            
+            // Coletar informações das placas
+            await this.connection.write('display board\n');
+            const boardInfo = await this.connection.exec('display board\n');
+            
+            // Coletar temperatura
+            const temperature = await this.snmp.get('1.3.6.1.4.1.2011.6.128.1.1.2.23.1.2.1.2');
+            
             return {
-                rxPower: rxMatch ? rxMatch[1] : 'N/A'
+                version: this.parseVersionInfo(versionInfo),
+                boards: this.parseBoardInfo(boardInfo),
+                temperature: parseFloat(temperature) / 10 // Converter para graus Celsius
             };
-        }
-    }
-
-    async getONUStatus(frame, slot, port, onuId) {
-        try {
-            // Tentar primeiro via SNMP
-            const status = await this.snmp.getONUStatus(port, onuId);
-            return status;
         } catch (error) {
-            // Se falhar SNMP, usar Telnet como fallback
-            const command = `display ont info ${frame} ${slot} ${port} ${onuId}`;
-            const output = await this.executeCommand(command);
-            if (output.includes('Run state : online')) {
-                return 'online';
-            } else if (output.includes('Run state : offline')) {
-                return 'offline';
-            }
-            return 'unknown';
+            logger.error('Erro ao coletar informações da OLT:', error);
+            throw error;
         }
     }
 
-    // Método auxiliar para parser de ONUs não autorizadas
-    parseUnauthorizedONUs(output) {
-        // Implementar o parser de acordo com o formato de saída da OLT
-        // Este é um exemplo básico, ajuste conforme necessário
-        const lines = output.split('\n');
-        const onus = [];
+    async getRegisteredONUs() {
+        try {
+            await this.connect();
+            const onus = [];
+            
+            // Coletar ONUs de cada placa
+            await this.connection.write('enable\n');
+            await this.connection.write('config\n');
+            
+            // Iterar sobre as placas GPON (slots típicos: 0-15)
+            for (let slot = 0; slot <= 15; slot++) {
+                await this.connection.write(`interface gpon 0/${slot}\n`);
+                const result = await this.connection.exec('display ont info all\n');
+                
+                const slotONUs = this.parseONUInfo(result, slot);
+                onus.push(...slotONUs);
+            }
+            
+            return onus;
+        } catch (error) {
+            logger.error('Erro ao coletar ONUs:', error);
+            throw error;
+        }
+    }
+
+    async getONUSignals() {
+        try {
+            const onus = await this.getRegisteredONUs();
+            const signals = [];
+
+            for (const onu of onus) {
+                const { slot, port, onuId } = onu;
+                const index = `${slot}.${port}.${onuId}`;
+
+                const rxPower = await this.snmp.get(`1.3.6.1.4.1.2011.6.128.1.1.2.51.1.4.${index}`);
+                const txPower = await this.snmp.get(`1.3.6.1.4.1.2011.6.128.1.1.2.51.1.3.${index}`);
+
+                signals.push({
+                    ...onu,
+                    rxPower: this.convertDBM(rxPower),
+                    txPower: this.convertDBM(txPower)
+                });
+            }
+
+            return signals;
+        } catch (error) {
+            logger.error('Erro ao coletar sinais das ONUs:', error);
+            throw error;
+        }
+    }
+
+    async discoverUnauthorizedONUs() {
+        try {
+            await this.connect();
+            await this.connection.write('enable\n');
+            await this.connection.write('config\n');
+            
+            const unauthorizedONUs = [];
+            
+            for (let slot = 0; slot <= 15; slot++) {
+                await this.connection.write(`interface gpon 0/${slot}\n`);
+                const result = await this.connection.exec('display ont autofind all\n');
+                
+                const slotONUs = this.parseUnauthorizedONUs(result, slot);
+                unauthorizedONUs.push(...slotONUs);
+            }
+            
+            return unauthorizedONUs;
+        } catch (error) {
+            logger.error('Erro ao descobrir ONUs não autorizadas:', error);
+            throw error;
+        }
+    }
+
+    async provisionONU({ slot, port, serialNumber, lineProfile, serviceProfile, description, vlan }) {
+        try {
+            await this.connect();
+            await this.connection.write('enable\n');
+            await this.connection.write('config\n');
+            await this.connection.write(`interface gpon 0/${slot}\n`);
+            
+            // Encontrar próximo ID disponível
+            const result = await this.connection.exec('display ont info all\n');
+            const existingONUs = this.parseONUInfo(result, slot);
+            const usedIds = existingONUs.map(onu => onu.onuId);
+            let nextId = 1;
+            while (usedIds.includes(nextId)) {
+                nextId++;
+            }
+            
+            // Provisionar ONU
+            const commands = [
+                `ont add ${port} ${nextId} sn-auth ${serialNumber} omci ont-lineprofile-id ${lineProfile} ont-srvprofile-id ${serviceProfile} desc "${description}"`,
+                `ont port native-vlan ${port} ${nextId} eth 1 vlan ${vlan}`,
+                'quit'
+            ];
+            
+            for (const command of commands) {
+                await this.connection.write(command + '\n');
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Aguardar processamento
+            }
+            
+            logger.info(`ONU ${serialNumber} provisionada com sucesso`);
+            return true;
+        } catch (error) {
+            logger.error(`Erro ao provisionar ONU ${serialNumber}:`, error);
+            throw error;
+        }
+    }
+
+    // Métodos auxiliares de parsing
+    parseVersionInfo(data) {
+        const versionMatch = data.match(/VERSION\s*:\s*([\w.-]+)/i);
+        const modelMatch = data.match(/PRODUCT\s*:\s*([\w-]+)/i);
+        
+        return {
+            version: versionMatch ? versionMatch[1] : 'Desconhecido',
+            model: modelMatch ? modelMatch[1] : 'Desconhecido'
+        };
+    }
+
+    parseBoardInfo(data) {
+        const boards = [];
+        const lines = data.split('\n');
         
         for (const line of lines) {
-            // Adaptar regex conforme o formato real da saída
-            const match = line.match(/(\d+)\/(\d+)\/(\d+)\s+(\S+)\s+/);
+            const match = line.match(/(\d+)\s+(\w+)\s+(\w+)\s+/);
             if (match) {
-                onus.push({
-                    frame: match[1],
-                    slot: match[2],
-                    port: match[3],
-                    sn: match[4]
+                boards.push({
+                    slot: parseInt(match[1]),
+                    type: match[2],
+                    status: match[3]
                 });
             }
         }
+        
+        return boards;
+    }
 
+    parseONUInfo(data, slot) {
+        const onus = [];
+        const lines = data.split('\n');
+        
+        for (const line of lines) {
+            const match = line.match(/(\d+)\s+(\d+)\s+(\w+)\s+(\w+)/);
+            if (match) {
+                onus.push({
+                    slot,
+                    port: parseInt(match[1]),
+                    onuId: parseInt(match[2]),
+                    serialNumber: match[3],
+                    status: match[4]
+                });
+            }
+        }
+        
         return onus;
     }
 
-    // Métodos específicos para comandos da OLT Huawei
-    async getONUList() {
+    parseUnauthorizedONUs(data, slot) {
+        const onus = [];
+        const lines = data.split('\n');
+        
+        for (const line of lines) {
+            const match = line.match(/(\d+)\s+(\w+)\s+(\w+)/);
+            if (match) {
+                onus.push({
+                    slot,
+                    port: parseInt(match[1]),
+                    serialNumber: match[2],
+                    type: match[3]
+                });
+            }
+        }
+        
+        return onus;
+    }
+
+    convertDBM(value) {
+        return (parseInt(value) / 10).toFixed(2);
+    }
+
+    async disconnect() {
         try {
-            const result = await this.executeCommand('display ont info 0 all');
-            return result;
+            await this.connection.end();
+            await this.snmp.close();
         } catch (error) {
-            logger.error('Erro ao obter lista de ONUs:', error);
-            throw error;
+            logger.error('Erro ao desconectar:', error);
         }
     }
 }

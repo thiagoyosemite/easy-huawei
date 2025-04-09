@@ -1,40 +1,51 @@
-const fs = require('fs').promises;
+const fs = require('fs');
 const path = require('path');
 
-const SETTINGS_FILE = path.join(__dirname, '../data/settings.json');
+class Settings {
+    constructor() {
+        this.settingsPath = path.join(__dirname, 'settings.json');
+        this.settings = this.loadSettings();
+    }
 
-// Configurações padrão
-const DEFAULT_SETTINGS = {
-    defaultLineProfile: '1',
-    defaultServiceProfile: '1',
-    defaultVlan: '100',
-    defaultDescription: 'ONU {sn}'
-};
+    loadSettings() {
+        try {
+            if (fs.existsSync(this.settingsPath)) {
+                const data = fs.readFileSync(this.settingsPath, 'utf8');
+                return JSON.parse(data);
+            }
+            return this.getDefaultSettings();
+        } catch (error) {
+            console.error('Erro ao carregar configurações:', error);
+            return this.getDefaultSettings();
+        }
+    }
 
-async function ensureSettingsFile() {
-    try {
-        await fs.access(SETTINGS_FILE);
-    } catch (error) {
-        // Se o arquivo não existe, cria o diretório e o arquivo
-        await fs.mkdir(path.dirname(SETTINGS_FILE), { recursive: true });
-        await fs.writeFile(SETTINGS_FILE, JSON.stringify(DEFAULT_SETTINGS, null, 2));
+    getDefaultSettings() {
+        return {
+            defaultLineProfile: '1',
+            defaultServiceProfile: '1',
+            defaultVlan: '100',
+            defaultDescription: 'ONU {sn}'
+        };
+    }
+
+    getAll() {
+        return this.settings;
+    }
+
+    update(newSettings) {
+        this.settings = {
+            ...this.settings,
+            ...newSettings
+        };
+        
+        try {
+            fs.writeFileSync(this.settingsPath, JSON.stringify(this.settings, null, 2));
+        } catch (error) {
+            console.error('Erro ao salvar configurações:', error);
+            throw new Error('Falha ao salvar configurações');
+        }
     }
 }
 
-async function getSettings() {
-    await ensureSettingsFile();
-    const data = await fs.readFile(SETTINGS_FILE, 'utf8');
-    return JSON.parse(data);
-}
-
-async function updateSettings(newSettings) {
-    await ensureSettingsFile();
-    const settings = { ...DEFAULT_SETTINGS, ...newSettings };
-    await fs.writeFile(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-    return settings;
-}
-
-module.exports = {
-    getSettings,
-    updateSettings
-}; 
+module.exports = new Settings(); 

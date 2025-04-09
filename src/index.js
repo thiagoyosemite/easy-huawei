@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 const path = require('path');
 const OltManager = require('./OltManager');
 const multer = require('multer');
@@ -7,12 +8,16 @@ const fs = require('fs');
 const settings = require('./settings');
 
 const app = express();
+const port = process.env.PORT || 3000;
+
+// Habilitar CORS para desenvolvimento
+app.use(cors());
 app.use(express.json());
 
 // Configuração do multer para upload de arquivos
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const uploadDir = '/home/ftpuser/ftp';
+        const uploadDir = '/app/uploads';
         // Criar o diretório se não existir
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
@@ -28,10 +33,10 @@ const upload = multer({ storage: storage });
 
 // Configuração da OLT
 const oltConfig = {
-    host: process.env.OLT_HOST,
+    host: process.env.OLT_HOST || '10.0.0.10',
     port: parseInt(process.env.OLT_PORT || '23'),
-    username: process.env.OLT_USERNAME,
-    password: process.env.OLT_PASSWORD
+    username: process.env.OLT_USERNAME || 'admin',
+    password: process.env.OLT_PASSWORD || 'admin'
 };
 
 const oltManager = new OltManager(oltConfig);
@@ -42,17 +47,63 @@ app.use('/api', async (req, res, next) => {
         try {
             await oltManager.connect();
         } catch (error) {
+            console.error('Erro ao conectar com a OLT:', error);
             return res.status(500).json({ error: 'Falha ao conectar com a OLT' });
         }
     }
     next();
 });
 
-// Rota para listar ONUs não autorizadas
+// Rota para obter informações da OLT
+app.get('/api/olt/info', async (req, res) => {
+    try {
+        const info = await oltManager.getOLTInfo();
+        res.json(info);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota para obter ONUs registradas
+app.get('/api/onus', async (req, res) => {
+    try {
+        const onus = await oltManager.getRegisteredONUs();
+        res.json(onus);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota para obter sinais das ONUs
+app.get('/api/onus/signals', async (req, res) => {
+    try {
+        const signals = await oltManager.getONUSignals();
+        res.json(signals);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota para descobrir ONUs não autorizadas
 app.get('/api/unauthorized-onus', async (req, res) => {
     try {
-        const onus = await oltManager.getUnauthorizedONUs();
-        res.json({ data: onus });
+        const onus = await oltManager.discoverUnauthorizedONUs();
+        res.json(onus);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota para obter configurações
+app.get('/api/settings', (req, res) => {
+    res.json(settings.getAll());
+});
+
+// Rota para salvar configurações
+app.post('/api/settings', (req, res) => {
+    try {
+        settings.update(req.body);
+        res.json({ message: 'Configurações atualizadas com sucesso' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
@@ -92,6 +143,7 @@ app.post('/api/provision-onu', async (req, res) => {
 
         res.json({ message: 'ONU provisionada com sucesso' });
     } catch (error) {
+        console.error('Erro ao provisionar ONU:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -103,6 +155,7 @@ app.delete('/api/onu/:frame/:slot/:port/:onuId', async (req, res) => {
         await oltManager.deleteONU(frame, slot, port, onuId);
         res.json({ message: 'ONU removida com sucesso' });
     } catch (error) {
+        console.error('Erro ao remover ONU:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -114,6 +167,7 @@ app.get('/api/onu/:frame/:slot/:port/:onuId', async (req, res) => {
         const details = await oltManager.getONUDetails(frame, slot, port, onuId);
         res.json({ data: details });
     } catch (error) {
+        console.error('Erro ao obter detalhes da ONU:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -125,6 +179,7 @@ app.get('/api/onu/:frame/:slot/:port/:onuId/signal', async (req, res) => {
         const signal = await oltManager.getONUSignal(frame, slot, port, onuId);
         res.json({ data: signal });
     } catch (error) {
+        console.error('Erro ao obter sinal da ONU:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -167,27 +222,6 @@ app.get('/api/download/:filename', (req, res) => {
     res.download(filePath);
 });
 
-// Rotas de configurações
-app.get('/api/settings', async (req, res) => {
-    try {
-        const currentSettings = await settings.getSettings();
-        res.json(currentSettings);
-    } catch (error) {
-        console.error('Erro ao carregar configurações:', error);
-        res.status(500).json({ error: 'Erro ao carregar configurações' });
-    }
-});
-
-app.post('/api/settings', async (req, res) => {
-    try {
-        const updatedSettings = await settings.updateSettings(req.body);
-        res.json(updatedSettings);
-    } catch (error) {
-        console.error('Erro ao salvar configurações:', error);
-        res.status(500).json({ error: 'Erro ao salvar configurações' });
-    }
-});
-
 // Servir arquivos estáticos do frontend
 app.use(express.static(path.join(__dirname, '../dist')));
 
@@ -202,7 +236,7 @@ process.on('SIGINT', () => {
     process.exit();
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Servidor rodando na porta ${PORT}`);
+// Iniciar o servidor
+app.listen(port, () => {
+    console.log(`Servidor rodando na porta ${port}`);
 }); 

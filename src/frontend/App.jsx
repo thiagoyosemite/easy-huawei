@@ -1,13 +1,35 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import Sidebar from './components/Sidebar';
-import Header from './components/Header';
 import UnauthorizedONUs from './components/UnauthorizedONUs';
-import ONUDetails from './components/ONUDetails';
+import ONUs from './components/ONUs';
+import Monitoring from './components/Monitoring';
 import Settings from './components/Settings';
+import Dashboard from './components/Dashboard';
 
 function App() {
-  const [selectedView, setSelectedView] = useState('unauthorized');
-  const [selectedONU, setSelectedONU] = useState(null);
+  const [selectedView, setSelectedView] = useState('dashboard');
+
+  // Função para renderizar o componente correto baseado na view selecionada
+  const renderContent = () => {
+    switch (selectedView) {
+      case 'dashboard':
+        return <Dashboard />;
+      case 'unauthorized':
+        return <UnauthorizedONUs />;
+      case 'onus':
+        return <ONUs />;
+      case 'monitoring':
+        return <Monitoring />;
+      case 'settings':
+        return <Settings />;
+      default:
+        return (
+          <div className="bg-white rounded-lg shadow p-6">
+            <p>Selecione uma opção no menu lateral</p>
+          </div>
+        );
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -16,19 +38,9 @@ function App() {
         <Sidebar selectedView={selectedView} onViewChange={setSelectedView} />
 
         {/* Main Content */}
-        <div className="flex-1">
-          <Header />
-          <main className="p-6">
-            {selectedView === 'unauthorized' && (
-              <UnauthorizedONUs onSelectONU={setSelectedONU} />
-            )}
-            {selectedView === 'onu-details' && selectedONU && (
-              <ONUDetails onu={selectedONU} />
-            )}
-            {selectedView === 'settings' && (
-              <Settings />
-            )}
-          </main>
+        <div className="flex-1 p-6 overflow-auto">
+          <h1 className="text-2xl font-bold mb-4">OLT Manager</h1>
+          {renderContent()}
         </div>
       </div>
     </div>
