@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-# Instalar dependências
+# Instalar dependências do sistema
 RUN apt-get update && apt-get install -y \
     vsftpd \
     libsnmp-dev \
@@ -11,7 +11,10 @@ WORKDIR /app
 
 # Copiar arquivos do projeto
 COPY package*.json ./
-RUN npm install
+
+# Instalar dependências Node.js
+RUN npm install && \
+    npm install dotenv net-snmp express cors
 
 COPY . .
 
