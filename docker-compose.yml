@@ -1,9 +1,11 @@
 version: '3.8'
 
 services:
-  olt-manager:
-    build: .
-    container_name: easy-huawei-olt-manager
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: easy-huawei-backend
     ports:
       - "3000:3000"
       - "21:21"
@@ -12,10 +14,26 @@ services:
       - .:/app
     environment:
       - NODE_ENV=development
-      - VSFTPD_LOG_FILE=/var/log/vsftpd.log
     networks:
       - olt-network
     restart: unless-stopped
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: easy-huawei-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./src/frontend:/app/src
+      - ./public:/app/public
+    environment:
+      - NODE_ENV=development
+    networks:
+      - olt-network
+    depends_on:
+      - backend
 
 networks:
   olt-network:
