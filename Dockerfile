@@ -67,11 +67,12 @@ RUN useradd -r -u 1001 -g root nodeuser \
     && chown -R nodeuser:root /app \
     && chown -R nodeuser:root /app/logs
 
-# Criar usuário FTP
+# Criar usuário FTP e configurar permissões
 RUN useradd -m ftpuser && \
     echo "ftpuser:ftppassword" | chpasswd && \
-    mkdir -p /home/ftpuser/ftp && \
-    chown -R ftpuser:ftpuser /home/ftpuser/ftp
+    mkdir -p /home/ftpuser/ftp/projeto && \
+    chown -R ftpuser:ftpuser /home/ftpuser && \
+    chmod -R 755 /home/ftpuser
 
 # Script de inicialização
 COPY start.sh /start.sh

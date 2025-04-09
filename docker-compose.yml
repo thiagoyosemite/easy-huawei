@@ -17,8 +17,13 @@ services:
       - SNMP_VERSION=${SNMP_VERSION}
       - SNMP_PORT=${SNMP_PORT}
     volumes:
-      - ./src:/app/src
-      - ./logs:/app/logs
-      - ./.env:/app/.env
-      - ./ftp:/home/ftpuser/ftp
+      - ./src:/home/ftpuser/ftp/src
+      - ./public:/home/ftpuser/ftp/public
+      - ./dist:/home/ftpuser/ftp/dist
+      - ./logs:/home/ftpuser/ftp/logs
+      - ./.env:/home/ftpuser/ftp/.env
+      - ./package.json:/home/ftpuser/ftp/package.json
+      - ./package-lock.json:/home/ftpuser/ftp/package-lock.json
+      - ./docker-compose.yml:/home/ftpuser/ftp/docker-compose.yml
+      - ./Dockerfile:/home/ftpuser/ftp/Dockerfile
     restart: unless-stopped 
