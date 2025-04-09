@@ -10,10 +10,9 @@ services:
       - "21100-21110:21100-21110"
     volumes:
       - .:/app
-      - ./logs:/app/logs
-      - ./ftp:/home/ftpuser/ftp
     environment:
       - NODE_ENV=development
+      - VSFTPD_LOG_FILE=/var/log/vsftpd.log
     networks:
       - olt-network
     restart: unless-stopped

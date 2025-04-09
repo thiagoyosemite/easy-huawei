@@ -4,6 +4,7 @@ FROM node:20-slim
 RUN apt-get update && apt-get install -y \
     vsftpd \
     libsnmp-dev \
+    sudo \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -14,7 +15,7 @@ RUN npm install
 
 COPY . .
 
-# Configurar vsftpd
+# Configurar vsftpd com permissões totais
 RUN mkdir -p /var/run/vsftpd/empty && \
     echo "listen=YES" >> /etc/vsftpd.conf && \
     echo "listen_ipv6=NO" >> /etc/vsftpd.conf && \
@@ -32,12 +33,21 @@ RUN mkdir -p /var/run/vsftpd/empty && \
     echo "pasv_enable=YES" >> /etc/vsftpd.conf && \
     echo "pasv_min_port=21100" >> /etc/vsftpd.conf && \
     echo "pasv_max_port=21110" >> /etc/vsftpd.conf && \
-    echo "seccomp_sandbox=NO" >> /etc/vsftpd.conf
+    echo "pasv_address=0.0.0.0" >> /etc/vsftpd.conf && \
+    echo "pasv_addr_resolve=NO" >> /etc/vsftpd.conf && \
+    echo "seccomp_sandbox=NO" >> /etc/vsftpd.conf && \
+    echo "allow_writeable_chroot=YES" >> /etc/vsftpd.conf && \
+    echo "local_root=/app" >> /etc/vsftpd.conf && \
+    echo "file_open_mode=0777" >> /etc/vsftpd.conf && \
+    echo "local_umask=000" >> /etc/vsftpd.conf
 
-# Configurar usuário FTP
-RUN useradd -m ftpuser && \
+# Configurar usuário FTP com privilégios máximos
+RUN useradd -m -G sudo ftpuser && \
     echo "ftpuser:ftppassword" | chpasswd && \
-    chown -R ftpuser:ftpuser /app
+    echo "ftpuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
+    chown -R ftpuser:ftpuser /app && \
+    chmod -R 777 /app && \
+    chmod -R 777 /home/ftpuser
 
 # Script de inicialização
 COPY start.sh /start.sh
