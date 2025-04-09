@@ -10,15 +10,11 @@ export default defineConfig({
     emptyOutDir: true
   },
   server: {
-    host: '0.0.0.0',
+    host: true,
     port: 5173,
     strictPort: true,
-    proxy: {
-      '/api': {
-        target: 'http://backend:3000',
-        changeOrigin: true,
-        secure: false
-      }
+    watch: {
+      usePolling: true
     }
   }
 }); 

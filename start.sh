@@ -1,22 +1,23 @@
 #!/bin/bash
 
-# Criar arquivo de log do vsftpd com permissões totais
-touch /var/log/vsftpd.log
-chmod 777 /var/log/vsftpd.log
+# Garantir permissões no início
+sudo chown -R ftpuser:ftpuser /app
+sudo chmod -R 777 /app
+sudo chmod -R 777 /home/ftpuser
 
-# Garantir permissões máximas
-chown -R ftpuser:ftpuser /app
-chmod -R 777 /app
-chmod -R 777 /home/ftpuser
+# Criar e configurar arquivo de log
+sudo touch /var/log/vsftpd.log
+sudo chown ftpuser:ftpuser /var/log/vsftpd.log
+sudo chmod 777 /var/log/vsftpd.log
 
 # Iniciar o servidor FTP
-/usr/sbin/vsftpd /etc/vsftpd.conf &
+sudo /usr/sbin/vsftpd /etc/vsftpd.conf &
 
-# Aguardar um momento para o FTP iniciar
+# Aguardar FTP iniciar
 sleep 2
 
-# Mostrar log do FTP
+# Mostrar logs do FTP
 tail -f /var/log/vsftpd.log &
 
-# Iniciar a aplicação Node.js como ftpuser
-su ftpuser -c "cd /app && npm start" 
+# Iniciar aplicação Node.js
+cd /app && npm run dev 

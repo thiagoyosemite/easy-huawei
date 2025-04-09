@@ -9,23 +9,19 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copiar arquivos do projeto
-COPY package*.json ./
+# Configurar usuário FTP com privilégios root
+RUN useradd -m -G sudo ftpuser && \
+    echo "ftpuser:ftppassword" | chpasswd && \
+    echo "ftpuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
-# Instalar dependências Node.js
-RUN npm install && \
-    npm install dotenv net-snmp express cors
-
-COPY . .
-
-# Configurar vsftpd com permissões totais
+# Configurar vsftpd
 RUN mkdir -p /var/run/vsftpd/empty && \
     echo "listen=YES" >> /etc/vsftpd.conf && \
     echo "listen_ipv6=NO" >> /etc/vsftpd.conf && \
     echo "anonymous_enable=NO" >> /etc/vsftpd.conf && \
     echo "local_enable=YES" >> /etc/vsftpd.conf && \
     echo "write_enable=YES" >> /etc/vsftpd.conf && \
-    echo "local_umask=022" >> /etc/vsftpd.conf && \
+    echo "local_umask=000" >> /etc/vsftpd.conf && \
     echo "dirmessage_enable=YES" >> /etc/vsftpd.conf && \
     echo "use_localtime=YES" >> /etc/vsftpd.conf && \
     echo "xferlog_enable=YES" >> /etc/vsftpd.conf && \
@@ -41,21 +37,23 @@ RUN mkdir -p /var/run/vsftpd/empty && \
     echo "seccomp_sandbox=NO" >> /etc/vsftpd.conf && \
     echo "allow_writeable_chroot=YES" >> /etc/vsftpd.conf && \
     echo "local_root=/app" >> /etc/vsftpd.conf && \
-    echo "file_open_mode=0777" >> /etc/vsftpd.conf && \
-    echo "local_umask=000" >> /etc/vsftpd.conf
+    echo "file_open_mode=0777" >> /etc/vsftpd.conf
 
-# Configurar usuário FTP com privilégios máximos
-RUN useradd -m -G sudo ftpuser && \
-    echo "ftpuser:ftppassword" | chpasswd && \
-    echo "ftpuser ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers && \
-    chown -R ftpuser:ftpuser /app && \
+# Copiar arquivos do projeto e configurar permissões
+COPY --chown=ftpuser:ftpuser . .
+RUN npm install
+
+# Garantir permissões em todo o diretório
+RUN chown -R ftpuser:ftpuser /app && \
     chmod -R 777 /app && \
-    chmod -R 777 /home/ftpuser
+    chmod -R 777 /home/ftpuser && \
+    chmod 777 /var/log
 
 # Script de inicialização
-COPY start.sh /start.sh
+COPY --chown=ftpuser:ftpuser start.sh /start.sh
 RUN chmod +x /start.sh
 
-EXPOSE 3000 21 21100-21110
+EXPOSE 3000 5173 21 21100-21110
 
+USER ftpuser
 CMD ["/start.sh"] 

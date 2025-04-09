@@ -1,39 +1,20 @@
 version: '3.8'
 
 services:
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    container_name: easy-huawei-backend
+  app:
+    build: .
+    container_name: easy-huawei-app
     ports:
       - "3000:3000"
+      - "5173:5173"
       - "21:21"
       - "21100-21110:21100-21110"
     volumes:
       - .:/app
+      - /app/node_modules
     environment:
       - NODE_ENV=development
-    networks:
-      - olt-network
     restart: unless-stopped
-
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-    container_name: easy-huawei-frontend
-    ports:
-      - "5173:5173"
-    volumes:
-      - ./src/frontend:/app/src
-      - ./public:/app/public
-    environment:
-      - NODE_ENV=development
-    networks:
-      - olt-network
-    depends_on:
-      - backend
 
 networks:
   olt-network:
