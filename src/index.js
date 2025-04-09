@@ -2,9 +2,28 @@ require('dotenv').config();
 const express = require('express');
 const path = require('path');
 const OltManager = require('./OltManager');
+const multer = require('multer');
+const fs = require('fs');
 
 const app = express();
 app.use(express.json());
+
+// Configuração do multer para upload de arquivos
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadDir = '/home/ftpuser/ftp';
+        // Criar o diretório se não existir
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname);
+    }
+});
+
+const upload = multer({ storage: storage });
 
 // Configuração da OLT
 const oltConfig = {
@@ -107,6 +126,44 @@ app.get('/api/onu/:frame/:slot/:port/:onuId/signal', async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// Rota para upload de arquivo
+app.post('/api/upload', upload.single('file'), (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: 'Nenhum arquivo enviado' });
+        }
+        res.json({ 
+            message: 'Arquivo enviado com sucesso',
+            filename: req.file.originalname
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Rota para listar arquivos
+app.get('/api/files', (req, res) => {
+    const directory = '/home/ftpuser/ftp';
+    fs.readdir(directory, (err, files) => {
+        if (err) {
+            return res.status(500).json({ error: 'Erro ao listar arquivos' });
+        }
+        res.json({ files });
+    });
+});
+
+// Rota para download de arquivo
+app.get('/api/download/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join('/home/ftpuser/ftp', filename);
+    
+    if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ error: 'Arquivo não encontrado' });
+    }
+    
+    res.download(filePath);
 });
 
 // Servir arquivos estáticos do frontend
