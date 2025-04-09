@@ -24,6 +24,7 @@ RUN mkdir -p /var/run/vsftpd/empty && \
     echo "xferlog_enable=YES" >> /etc/vsftpd.conf && \
     echo "connect_from_port_20=YES" >> /etc/vsftpd.conf && \
     echo "chroot_local_user=YES" >> /etc/vsftpd.conf && \
+    echo "allow_writeable_chroot=YES" >> /etc/vsftpd.conf && \
     echo "secure_chroot_dir=/var/run/vsftpd/empty" >> /etc/vsftpd.conf && \
     echo "pam_service_name=vsftpd" >> /etc/vsftpd.conf && \
     echo "pasv_enable=YES" >> /etc/vsftpd.conf && \
