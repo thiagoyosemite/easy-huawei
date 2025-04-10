@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import AppBar from '@mui/material/AppBar';
@@ -20,34 +21,23 @@ import WarningIcon from '@mui/icons-material/Warning';
 import Dashboard from './components/Dashboard';
 import ONUs from './components/ONUs';
 import UnauthorizedONUs from './components/UnauthorizedONUs';
-
-const darkTheme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2', // Azul do Material UI
-    },
-    background: {
-      default: '#ffffff',
-      paper: '#ffffff'
-    },
-    text: {
-      primary: '#1976d2'
-    }
-  },
-});
+import OnlineONUs from './components/OnlineONUs';
+import OfflineONUs from './components/OfflineONUs';
+import HighSignalONUs from './components/HighSignalONUs';
+import AllONUs from './components/AllONUs';
+import Layout from './components/Layout';
 
 const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, component: Dashboard },
-  { text: 'ONUs', icon: <RouterIcon />, component: ONUs },
-  { text: 'ONUs não Autorizadas', icon: <WarningIcon />, component: UnauthorizedONUs },
-  { text: 'Monitoramento', icon: <MonitorIcon /> },
-  { text: 'Configurações', icon: <SettingsIcon /> },
+  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+  { text: 'ONUs', icon: <RouterIcon />, path: '/onus' },
+  { text: 'ONUs não Autorizadas', icon: <WarningIcon />, path: '/unauthorized-onus' },
+  { text: 'Monitoramento', icon: <MonitorIcon />, path: '/monitoring' },
+  { text: 'Configurações', icon: <SettingsIcon />, path: '/settings' },
 ];
 
-function App() {
+function MainContent({ toggleTheme }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedView, setSelectedView] = useState('Dashboard');
+  const navigate = useNavigate();
 
   const toggleDrawer = (open) => (event) => {
     if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
@@ -56,87 +46,117 @@ function App() {
     setDrawerOpen(open);
   };
 
-  const handleMenuItemClick = (text) => {
-    setSelectedView(text);
+  const handleMenuItemClick = (path) => {
+    navigate(path);
     setDrawerOpen(false);
   };
 
-  const renderContent = () => {
-    const selectedItem = menuItems.find(item => item.text === selectedView);
-    if (selectedItem?.component) {
-      const Component = selectedItem.component;
-      return <Component />;
-    }
-    return (
-      <Typography>
-        Conteúdo do {selectedView} será implementado em breve.
-      </Typography>
-    );
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <AppBar position="fixed">
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={toggleDrawer(true)}
+            sx={{ mr: 2 }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap component="div">
+            Easy Huawei OLT Manager
+          </Typography>
+        </Toolbar>
+      </AppBar>
+      <Drawer
+        anchor="left"
+        open={drawerOpen}
+        onClose={toggleDrawer(false)}
+      >
+        <Box
+          sx={{ width: 250 }}
+          role="presentation"
+        >
+          <List>
+            {menuItems.map((item) => (
+              <ListItem 
+                button 
+                key={item.text}
+                onClick={() => handleMenuItemClick(item.path)}
+                selected={location.pathname === item.path}
+              >
+                <ListItemIcon>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      </Drawer>
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          mt: 8,
+          backgroundColor: 'background.default',
+          minHeight: '100vh',
+        }}
+      >
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/onus" element={<ONUs />} />
+          <Route path="/unauthorized-onus" element={<UnauthorizedONUs />} />
+          <Route path="/online-onus" element={<OnlineONUs />} />
+          <Route path="/offline-onus" element={<OfflineONUs />} />
+          <Route path="/high-signal-onus" element={<HighSignalONUs />} />
+          <Route path="/all-onus" element={<AllONUs />} />
+          <Route path="/monitoring" element={
+            <Typography>Monitoramento será implementado em breve.</Typography>
+          } />
+          <Route path="/settings" element={
+            <Typography>Configurações serão implementadas em breve.</Typography>
+          } />
+        </Routes>
+      </Box>
+    </Box>
+  );
+}
+
+function App() {
+  const [mode, setMode] = useState('light');
+
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode,
+          primary: {
+            main: '#1976d2',
+          },
+          background: {
+            default: mode === 'light' ? '#f5f5f5' : '#121212',
+          },
+        },
+      }),
+    [mode],
+  );
+
+  const toggleTheme = () => {
+    setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
   };
 
   return (
-    <ThemeProvider theme={darkTheme}>
-      <CssBaseline />
-      <Box sx={{ display: 'flex' }}>
-        <AppBar position="fixed">
-          <Toolbar>
-            <IconButton
-              color="inherit"
-              aria-label="open drawer"
-              edge="start"
-              onClick={toggleDrawer(true)}
-              sx={{ mr: 2 }}
-            >
-              <MenuIcon />
-            </IconButton>
-            <Typography variant="h6" noWrap component="div">
-              Easy Huawei OLT Manager
-            </Typography>
-          </Toolbar>
-        </AppBar>
-        <Drawer
-          anchor="left"
-          open={drawerOpen}
-          onClose={toggleDrawer(false)}
-        >
-          <Box
-            sx={{ width: 250 }}
-            role="presentation"
-          >
-            <List>
-              {menuItems.map((item) => (
-                <ListItem 
-                  button 
-                  key={item.text}
-                  onClick={() => handleMenuItemClick(item.text)}
-                  selected={selectedView === item.text}
-                >
-                  <ListItemIcon>
-                    {item.icon}
-                  </ListItemIcon>
-                  <ListItemText primary={item.text} />
-                </ListItem>
-              ))}
-            </List>
-          </Box>
-        </Drawer>
-        <Box
-          component="main"
-          sx={{
-            flexGrow: 1,
-            p: 3,
-            mt: 8,
-            backgroundColor: 'background.default',
-            minHeight: '100vh',
-          }}
-        >
-          <Typography variant="h4" gutterBottom>
-            {selectedView}
-          </Typography>
-          {renderContent()}
-        </Box>
-      </Box>
-    </ThemeProvider>
+    <Router>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Layout toggleTheme={toggleTheme}>
+          <MainContent toggleTheme={toggleTheme} />
+        </Layout>
+      </ThemeProvider>
+    </Router>
   );
 }
 

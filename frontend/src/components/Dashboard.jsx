@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Grid, Card, CardContent, Typography, CircularProgress, Alert } from '@mui/material';
+import { Grid, Card, CardContent, Typography, CircularProgress, Alert, CardActionArea } from '@mui/material';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState({
@@ -130,71 +132,131 @@ function Dashboard() {
 
       {/* ONUs não Autorizadas */}
       <Grid item xs={12} sm={6} md={2.4}>
-        <Card sx={{ bgcolor: '#bbdefb' }}> {/* Azul claro */}
-          <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
-              ONUs não Autorizadas
-            </Typography>
-            <Typography variant="h3" component="div" sx={{ color: '#1976d2' }}>
-              {stats.onuStats.unauthorized}
-            </Typography>
-          </CardContent>
+        <Card 
+          sx={{ 
+            bgcolor: '#bbdefb',
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: '#90caf9',
+              transform: 'scale(1.02)',
+              transition: 'all 0.2s ease-in-out'
+            }
+          }}
+        >
+          <CardActionArea onClick={() => navigate('/unauthorized-onus')}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ color: '#1976d2' }}>
+                ONUs não Autorizadas
+              </Typography>
+              <Typography variant="h3" component="div" sx={{ color: '#1976d2' }}>
+                {stats.onuStats.unauthorized}
+              </Typography>
+            </CardContent>
+          </CardActionArea>
         </Card>
       </Grid>
 
       {/* ONUs Online */}
       <Grid item xs={12} sm={6} md={2.4}>
-        <Card sx={{ bgcolor: '#e8f5e9' }}> {/* Verde claro */}
-          <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ color: '#2e7d32' }}>
-              ONUs Online
-            </Typography>
-            <Typography variant="h3" component="div" sx={{ color: '#2e7d32' }}>
-              {stats.onuStats.online}
-            </Typography>
-          </CardContent>
+        <Card 
+          sx={{ 
+            bgcolor: '#e8f5e9',
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: '#c8e6c9',
+              transform: 'scale(1.02)',
+              transition: 'all 0.2s ease-in-out'
+            }
+          }}
+        >
+          <CardActionArea onClick={() => navigate('/online-onus')}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ color: '#2e7d32' }}>
+                ONUs Online
+              </Typography>
+              <Typography variant="h3" component="div" sx={{ color: '#2e7d32' }}>
+                {stats.onuStats.online}
+              </Typography>
+            </CardContent>
+          </CardActionArea>
         </Card>
       </Grid>
 
       {/* Sinal Alto */}
       <Grid item xs={12} sm={6} md={2.4}>
-        <Card sx={{ bgcolor: '#fff3e0' }}> {/* Laranja claro */}
-          <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ color: '#ef6c00' }}>
-              Sinal Alto
-            </Typography>
-            <Typography variant="h3" component="div" sx={{ color: '#ef6c00' }}>
-              {stats.onuStats.highSignal}
-            </Typography>
-          </CardContent>
+        <Card 
+          sx={{ 
+            bgcolor: '#fff3e0',
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: '#ffe0b2',
+              transform: 'scale(1.02)',
+              transition: 'all 0.2s ease-in-out'
+            }
+          }}
+        >
+          <CardActionArea onClick={() => navigate('/high-signal-onus')}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ color: '#ef6c00' }}>
+                Sinal Alto
+              </Typography>
+              <Typography variant="h3" component="div" sx={{ color: '#ef6c00' }}>
+                {stats.onuStats.highSignal}
+              </Typography>
+            </CardContent>
+          </CardActionArea>
         </Card>
       </Grid>
 
       {/* ONUs Offline */}
       <Grid item xs={12} sm={6} md={2.4}>
-        <Card sx={{ bgcolor: '#ffebee' }}> {/* Vermelho claro */}
-          <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ color: '#c62828' }}>
-              ONUs Offline
-            </Typography>
-            <Typography variant="h3" component="div" sx={{ color: '#c62828' }}>
-              {stats.onuStats.offline}
-            </Typography>
-          </CardContent>
+        <Card 
+          sx={{ 
+            bgcolor: '#ffebee',
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: '#ffcdd2',
+              transform: 'scale(1.02)',
+              transition: 'all 0.2s ease-in-out'
+            }
+          }}
+        >
+          <CardActionArea onClick={() => navigate('/offline-onus')}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ color: '#c62828' }}>
+                ONUs Offline
+              </Typography>
+              <Typography variant="h3" component="div" sx={{ color: '#c62828' }}>
+                {stats.onuStats.offline}
+              </Typography>
+            </CardContent>
+          </CardActionArea>
         </Card>
       </Grid>
 
       {/* Total de ONUs */}
       <Grid item xs={12} sm={6} md={2.4}>
-        <Card sx={{ bgcolor: '#1976d2' }}> {/* Azul escuro */}
-          <CardContent>
-            <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
-              Total de ONUs
-            </Typography>
-            <Typography variant="h3" component="div" sx={{ color: 'white' }}>
-              {stats.onuStats.total}
-            </Typography>
-          </CardContent>
+        <Card 
+          sx={{ 
+            bgcolor: '#1976d2',
+            cursor: 'pointer',
+            '&:hover': {
+              bgcolor: '#1565c0',
+              transform: 'scale(1.02)',
+              transition: 'all 0.2s ease-in-out'
+            }
+          }}
+        >
+          <CardActionArea onClick={() => navigate('/all-onus')}>
+            <CardContent>
+              <Typography variant="h6" gutterBottom sx={{ color: 'white' }}>
+                Total de ONUs
+              </Typography>
+              <Typography variant="h3" component="div" sx={{ color: 'white' }}>
+                {stats.onuStats.total}
+              </Typography>
+            </CardContent>
+          </CardActionArea>
         </Card>
       </Grid>
 

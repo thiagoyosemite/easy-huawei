@@ -86,26 +86,48 @@ describe('UnauthorizedONUs', () => {
   test('valida campos do formulário de provisionamento', async () => {
     render(<UnauthorizedONUs />);
     
-    // Aguarda o carregamento dos dados e abre o diálogo
+    // Aguarda o carregamento inicial
     await waitFor(() => {
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
+
+    // Abre o diálogo de provisionamento
     const provisionButtons = screen.getAllByText('Provisionar');
     fireEvent.click(provisionButtons[0]);
-    
-    // Tenta submeter com campos vazios
-    const submitButton = screen.getByRole('button', { name: 'Confirmar' });
+
+    // Verifica se o botão está desabilitado inicialmente
+    const submitButton = screen.getByRole('button', { name: 'Confirmar provisionamento' });
     expect(submitButton).toBeDisabled();
-    
+
     // Preenche descrição inválida
-    const descriptionInput = screen.getByRole('textbox', { name: 'Descrição da ONU' });
+    const descriptionInput = screen.getByRole('textbox', { name: 'Descrição' });
+    const portInput = screen.getByRole('textbox', { name: 'Porta' });
     fireEvent.change(descriptionInput, { target: { value: 'ab' } });
-    expect(screen.getByText('Descrição deve ter pelo menos 3 caracteres')).toBeInTheDocument();
     
+    // Aguarda a mensagem de erro da descrição
+    await waitFor(() => {
+      expect(screen.getByText('Descrição deve ter pelo menos 3 caracteres')).toBeInTheDocument();
+    });
+
     // Preenche porta inválida
-    const portInput = screen.getByRole('textbox', { name: 'Porta da ONU' });
     fireEvent.change(portInput, { target: { value: 'invalid' } });
-    expect(screen.getByText('Formato inválido. Use: frame/slot/port (exemplo: 0/1/1)')).toBeInTheDocument();
+    
+    // Aguarda a mensagem de erro da porta
+    await waitFor(() => {
+      expect(screen.getByText('Formato inválido. Use: frame/slot/port (exemplo: 0/1/1)')).toBeInTheDocument();
+    });
+
+    // Verifica se o botão continua desabilitado com campos inválidos
+    expect(submitButton).toBeDisabled();
+
+    // Preenche campos válidos
+    fireEvent.change(descriptionInput, { target: { value: 'ONU Test' } });
+    fireEvent.change(portInput, { target: { value: '0/1/1' } });
+
+    // Aguarda o botão ser habilitado
+    await waitFor(() => {
+      expect(submitButton).not.toBeDisabled();
+    });
   });
 
   test('provisiona ONU com sucesso', async () => {
@@ -120,21 +142,21 @@ describe('UnauthorizedONUs', () => {
     fireEvent.click(provisionButtons[0]);
     
     // Preenche os campos corretamente
-    const descriptionInput = screen.getByRole('textbox', { name: 'Descrição da ONU' });
-    const portInput = screen.getByRole('textbox', { name: 'Porta da ONU' });
+    const descriptionInput = screen.getByRole('textbox', { name: 'Descrição' });
+    const portInput = screen.getByRole('textbox', { name: 'Porta' });
     
     fireEvent.change(descriptionInput, { target: { value: 'Cliente Teste' } });
     fireEvent.change(portInput, { target: { value: '0/1/1' } });
     
     // Submete o formulário
-    const submitButton = screen.getByRole('button', { name: 'Confirmar' });
+    const submitButton = screen.getByRole('button', { name: 'Confirmar provisionamento' });
     expect(submitButton).not.toBeDisabled();
     fireEvent.click(submitButton);
     
     // Verifica se a API foi chamada corretamente
     await waitFor(() => {
       expect(api.post).toHaveBeenCalledWith('/provision-onu', {
-        serialNumber: 'ABCD1234',
+        serialNumber: 'EFGH5678',
         port: '0/1/1',
         description: 'Cliente Teste'
       });
