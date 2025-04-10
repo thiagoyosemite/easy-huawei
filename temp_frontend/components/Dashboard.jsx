@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
@@ -14,12 +14,12 @@ export default function Dashboard() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:3000/api/onus');
+        const response = await axios.get("http://localhost:3000/api/onus");
         const onus = response.data || [];
         
         const online = onus.filter(onu => 
-          onu.status?.toLowerCase() === 'online' || 
-          onu.status?.toLowerCase() === 'active'
+          onu.status?.toLowerCase() === "online" || 
+          onu.status?.toLowerCase() === "active"
         ).length;
         
         setStats({
@@ -28,8 +28,8 @@ export default function Dashboard() {
           offline: onus.length - online
         });
       } catch (err) {
-        console.error('Erro ao carregar estatísticas:', err);
-        setError('Não foi possível carregar as estatísticas. Tente novamente.');
+        console.error("Erro ao carregar estatísticas:", err);
+        setError("Não foi possível carregar as estatísticas. Tente novamente.");
       } finally {
         setLoading(false);
       }

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
 export default function ONUs() {
   const [onus, setOnus] = useState([]);
@@ -10,11 +10,11 @@ export default function ONUs() {
     const fetchONUs = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('http://localhost:3000/api/onus');
+        const response = await axios.get("http://localhost:3000/api/onus");
         setOnus(response.data || []);
       } catch (err) {
-        console.error('Erro ao buscar ONUs:', err);
-        setError('Não foi possível carregar as ONUs. Tente novamente.');
+        console.error("Erro ao buscar ONUs:", err);
+        setError("Não foi possível carregar as ONUs. Tente novamente.");
       } finally {
         setLoading(false);
       }
@@ -64,12 +64,12 @@ export default function ONUs() {
             </div>
             <span
               className={`px-2 py-1 rounded-full text-xs font-medium ${
-                onu.status?.toLowerCase() === 'online' || onu.status?.toLowerCase() === 'active'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-red-100 text-red-800'
+                onu.status?.toLowerCase() === "online" || onu.status?.toLowerCase() === "active"
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
               }`}
             >
-              {onu.status || 'Desconhecido'}
+              {onu.status || "Desconhecido"}
             </span>
           </div>
           {onu.description && (
