@@ -70,6 +70,34 @@ const mockData = {
             port: 2,
             firstSeen: '2024-04-10T16:00:00Z'
         }
+    ],
+    // Dados simulados para os gráficos
+    authHistory: [
+        { date: '2024-04-04', count: 3 },
+        { date: '2024-04-05', count: 5 },
+        { date: '2024-04-06', count: 2 },
+        { date: '2024-04-07', count: 4 },
+        { date: '2024-04-08', count: 6 },
+        { date: '2024-04-09', count: 3 },
+        { date: '2024-04-10', count: 4 }
+    ],
+    lossHistory: [
+        { time: '08:00', count: 2 },
+        { time: '09:00', count: 1 },
+        { time: '10:00', count: 3 },
+        { time: '11:00', count: 0 },
+        { time: '12:00', count: 2 },
+        { time: '13:00', count: 1 },
+        { time: '14:00', count: 4 }
+    ],
+    systemMetrics: [
+        { time: '08:00', cpu: 45, bandwidth: 850 },
+        { time: '09:00', cpu: 52, bandwidth: 920 },
+        { time: '10:00', cpu: 48, bandwidth: 880 },
+        { time: '11:00', cpu: 55, bandwidth: 950 },
+        { time: '12:00', cpu: 50, bandwidth: 900 },
+        { time: '13:00', cpu: 47, bandwidth: 870 },
+        { time: '14:00', cpu: 53, bandwidth: 930 }
     ]
 };
 
@@ -95,6 +123,27 @@ app.get('/api/onus', (req, res) => {
 app.get('/api/unauthorized-onus', (req, res) => {
     if (simulationMode) {
         return res.json(mockData.unauthorizedOnus);
+    }
+    res.status(501).json({ error: 'Não implementado' });
+});
+
+app.get('/api/auth-history', (req, res) => {
+    if (simulationMode) {
+        return res.json(mockData.authHistory);
+    }
+    res.status(501).json({ error: 'Não implementado' });
+});
+
+app.get('/api/loss-history', (req, res) => {
+    if (simulationMode) {
+        return res.json(mockData.lossHistory);
+    }
+    res.status(501).json({ error: 'Não implementado' });
+});
+
+app.get('/api/system-metrics', (req, res) => {
+    if (simulationMode) {
+        return res.json(mockData.systemMetrics);
     }
     res.status(501).json({ error: 'Não implementado' });
 });
