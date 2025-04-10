@@ -1,63 +1,64 @@
-# OLT Manager
+# Easy Huawei
 
-Sistema de gerenciamento para OLT Huawei via SSH.
+Sistema de gerenciamento para equipamentos Huawei.
 
-## Requisitos
+## Estrutura do Projeto
 
-- Node.js 14.x ou superior
-- npm 6.x ou superior
-- Acesso SSH à OLT Huawei
+O projeto está organizado em duas partes principais:
 
-## Instalação
+### Backend (`/backend`)
+- Node.js + Express
+- Gerenciamento de ONUs
+- Comunicação com equipamentos Huawei
+- Variáveis de ambiente em `.env`
 
-1. Clone o repositório
-2. Instale as dependências:
+### Frontend (`/frontend`)
+- React + Vite
+- Material-UI para interface
+- Testes com Jest e Testing Library
+- Configuração ESLint
+
+## Desenvolvimento
+
+### Backend
 ```bash
+cd backend
 npm install
+npm run dev
 ```
-3. Copie o arquivo de exemplo de configuração:
+
+### Frontend
 ```bash
-cp .env.example .env
-```
-4. Configure as variáveis de ambiente no arquivo `.env`:
-```
-OLT_HOST=IP_DA_SUA_OLT
-OLT_USERNAME=seu_usuario
-OLT_PASSWORD=sua_senha
-OLT_PORT=22
-PORT=3000
+cd frontend
+npm install
+npm run dev
 ```
 
-## Uso
+## Testes
 
-Para iniciar o servidor:
-
+### Frontend
 ```bash
-node src/index.js
+cd frontend
+npm test
 ```
 
-### Endpoints disponíveis
+## Estrutura de Diretórios
 
-- `GET /onus` - Lista todas as ONUs
-- `GET /onus/:frame/:slot/:port/:onuId` - Obtém status de uma ONU específica
-
-## Logs
-
-Os logs são salvos em:
-- `error.log` - Apenas erros
-- `combined.log` - Todos os logs
-
-## Segurança
-
-- Nunca compartilhe seu arquivo `.env`
-- Use HTTPS em produção
-- Implemente autenticação antes de usar em produção
-- Mantenha as dependências atualizadas
-
-## Contribuição
-
-1. Faça um fork do projeto
-2. Crie sua feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request 
+```
+easy-huawei/
+├── backend/                 # Backend da aplicação
+│   ├── src/                # Código fonte do backend
+│   │   └── index.js       # Entry point do backend
+│   ├── package.json       # Dependências do backend
+│   └── .env              # Variáveis de ambiente do backend
+│
+├── frontend/               # Frontend da aplicação
+│   ├── src/              # Código fonte do frontend
+│   │   ├── components/   # Componentes React
+│   │   ├── __tests__/   # Testes
+│   │   └── api/         # Configuração da API
+│   ├── package.json     # Dependências do frontend
+│   ├── vite.config.js   # Configuração do Vite
+│   ├── jest.config.js   # Configuração do Jest
+│   └── .babelrc        # Configuração do Babel
+``` 
