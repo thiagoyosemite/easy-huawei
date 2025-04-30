@@ -1,8 +1,0 @@
-{
-  "verbose": true,
-  "ignore": ["*.test.js", "*.spec.js", ".git", "node_modules/**/node_modules"],
-  "watch": ["src/"],
-  "ext": "js,json",
-  "delay": "2000",
-  "legacyWatch": true
-} 
